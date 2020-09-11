@@ -1,0 +1,5 @@
+github.com
+golang.org
+gopkg.in
+*/vendor/*
+*/go.sum
