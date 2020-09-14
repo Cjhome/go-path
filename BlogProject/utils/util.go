@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
+	"time"
 
 	//切记：导入驱动包
 	_ "github.com/go-sql-driver/mysql"
@@ -39,6 +40,7 @@ func InitMysql() {
 		fmt.Println("db", db)
 		// 创建users表
 		CreateTableWithUser()
+		CreateTableWithArticle()
 	}
 }
 
@@ -73,4 +75,13 @@ func CreateTableWithUser() {
 func QueryRowDB(sql string) *sql.Row {
 	fmt.Println("sql", sql)
 	return db.QueryRow(sql)
+}
+
+func QueryDB(sql string) (*sql.Rows, error) {
+	return db.Query(sql)
+}
+
+// 时间戳格式化
+func SwitchTimeStampToData(ts int64) string {
+	return time.Unix(ts, 0).Format("2006-01-02 15:04:05")
 }

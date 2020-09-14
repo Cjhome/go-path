@@ -6,6 +6,9 @@
 <link href="../static/css/blogsheet.css" rel="stylesheet">
 </head>
 <body>
-{{template "block/nav.html" .}}
+    {{template "block/nav.html" .}}
+    <div id="main">
+	    {{ .Content}}
+	</div>
 </body>
 </html>
