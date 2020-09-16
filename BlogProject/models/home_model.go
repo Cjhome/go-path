@@ -4,6 +4,7 @@ import (
 	"BlogProject/utils"
 	"bytes"
 	"fmt"
+	"github.com/astaxie/beego"
 	"html/template"
 	"strconv"
 	"strings"
@@ -33,6 +34,14 @@ type TagLink struct {
 	TagUrl string
 }
 
+type HomeFooterPageCode struct {
+	HasPre bool
+	HasNext bool
+	ShowPage string
+	PreLink string
+	NextLink string
+}
+
 func MakeHomeBlocks(article []Article, isLogin bool) template.HTML {
 	htmlHome := ""
 	for _, art := range article {
@@ -50,7 +59,6 @@ func MakeHomeBlocks(article []Article, isLogin bool) template.HTML {
 		homeParam.UpdateLink = "/article/update?id=" + strconv.Itoa(art.Id)
 		homeParam.DeleteLink =  "/article/delete?id=" + strconv.Itoa(art.Id)
 		homeParam.IsLogin = isLogin
-		fmt.Println(homeParam)
 		// 处理变量
 		// parseFile 解析该文件，用于插入变量
 		t, _ := template.ParseFiles("views/block/home_block.html")
@@ -59,7 +67,6 @@ func MakeHomeBlocks(article []Article, isLogin bool) template.HTML {
 		t.Execute(&buffer, homeParam)
 		htmlHome += buffer.String()
 	}
-	fmt.Println("html -->", htmlHome)
 	return template.HTML(htmlHome)
 }
 
@@ -71,4 +78,58 @@ func createTags(tags string) []TagLink {
 		tagLink = append(tagLink, TagLink{tag, "/?tag=" + tag})
 	}
 	return tagLink
+}
+
+// -------翻页---------
+// page是当前的页数
+func ConfigHomeFooterPageCode(page int) HomeFooterPageCode {
+	pageCode := HomeFooterPageCode{}
+	// 查询出总的条数
+	num := GetArticleRowsNum()
+	// 从配置文件中读取每页显示的条数
+	pageRow, _ := beego.AppConfig.Int("articleListPageNum")
+	//计算出总页数
+	allPageNum := (num - 1) / pageRow + 1
+	pageCode.ShowPage = fmt.Sprintf("%d/%d", page, allPageNum)
+	// 当前页数小于等于1，那么上一页的按钮不能点击
+	if page <= 1 {
+		pageCode.HasPre = false
+	} else {
+		pageCode.HasPre = true
+	}
+
+	//当前页数大于等于总页数，那么下一页的按钮不能点击
+	if page >= allPageNum {
+		pageCode.HasNext = false
+	} else {
+		pageCode.HasNext = true
+	}
+	pageCode.PreLink = "/?page=" + strconv.Itoa(page - 1)
+	pageCode.NextLink = "/?page=" + strconv.Itoa(page + 1)
+	return pageCode
+}
+
+// -------翻页------
+// 存储表的行数，只有自己可以更改，当文章新增或者删除时需要更新这个值
+var artcileRowsNum = 0
+// 只有首次获取行数的时候采取统计表里的行数
+func GetArticleRowsNum() int {
+	if artcileRowsNum == 0 {
+		artcileRowsNum = QueryArticleRowNum()
+	}
+	return artcileRowsNum
+}
+
+// 设置页数
+func SetArticleRowsNum() {
+	artcileRowsNum = QueryArticleRowNum()
+}
+
+
+// 查询文章的总条数
+func QueryArticleRowNum() int {
+	row := utils.QueryRowDB("select count(id) from article")
+	num := 0
+	row.Scan(&num)
+	return num
 }

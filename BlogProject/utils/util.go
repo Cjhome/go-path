@@ -41,6 +41,7 @@ func InitMysql() {
 		// 创建users表
 		CreateTableWithUser()
 		CreateTableWithArticle()
+		CreateTableWithAlbum()
 	}
 }
 

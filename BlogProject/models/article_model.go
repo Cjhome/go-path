@@ -4,6 +4,8 @@ import (
 	"BlogProject/utils"
 	"fmt"
 	"github.com/astaxie/beego"
+	"log"
+	"strconv"
 )
 
 type Article struct {
@@ -19,6 +21,7 @@ type Article struct {
 // -------数据处理-------
 func AddArticle(article Article) (int64, error) {
 	i, err := insertArticle(article)
+	SetArticleRowsNum()
 	return i, err
 }
 
@@ -34,7 +37,6 @@ func FindArticleWithPage(page int) ([]Article, error) {
 	// 从配置文件中获取每页的文章数量
 	num, _ := beego.AppConfig.Int("articleListPageNum")
 	page--
-	fmt.Println("----------->page", page)
 	return QueryArticleWithPage(page, num)
 }
 
@@ -59,7 +61,6 @@ func QueryArticleWithCon(sql string) ([]Article, error) {
 	// 获取数据库数据
 	fmt.Println("sql", sql)
 	rows, err := utils.QueryDB(sql)
-	fmt.Println("rows",  rows)
 	if err != nil {
 		return nil, err
 	}
@@ -79,4 +80,60 @@ func QueryArticleWithCon(sql string) ([]Article, error) {
 		artList = append(artList, art)
 	}
 	return artList, nil
+}
+
+func QueryArticleWithId(id int) Article {
+	row := utils.QueryRowDB("select id, title, tags, short, content, author, createtime from article where id=" + strconv.Itoa(id))
+	title := ""
+	tags := ""
+	short := ""
+	content := ""
+	author := ""
+	var createtime int64
+	createtime = 0
+	row.Scan(&id, &title, &tags, &short, &content, &author, &createtime)
+	art := Article{id, title, tags, short, content, author, createtime}
+	return art
+}
+
+func UpdateArticle(article Article) (int64, error) {
+	// 数据库操作
+	return utils.ModifyDB("update article set title=?,tags=?,content=? where id=?", article.Title, article.Tags, article.Content, article.Id)
+}
+
+//--------删除文章---------
+func DeleteArticle(artID int) (int64, error) {
+	i, err := deleteArticleWithArtId(artID)
+	SetArticleRowsNum()
+	return i, err
+}
+
+// 添加sql语句
+func deleteArticleWithArtId(artID int) (int64, error) {
+	return utils.ModifyDB("delete from article where id=?", artID)
+}
+
+// 查询标签，返回一个字段的列表
+func QueryArticleWithParam(param string) []string {
+	rows, err := utils.QueryDB(fmt.Sprintf("select %s from article", param))
+	if err != nil {
+		log.Println(err)
+	}
+	var paramList []string
+	for rows.Next() {
+		arg := ""
+		rows.Scan(&arg)
+		paramList = append(paramList, arg)
+	}
+	return paramList
+}
+
+// -------按照标签查询---------
+func QueryArticlesWithTag(tag string) ([]Article, error) {
+	sql := "where tags like '%&" + tag + "&%'"
+	sql += " or tags like '" + tag + "&%'"
+	sql += " or tags like '" + tag + "&%'"
+	sql += " or tags like '" + tag + "'"
+	fmt.Println(sql)
+	return QueryArticleWithCon(sql)
 }

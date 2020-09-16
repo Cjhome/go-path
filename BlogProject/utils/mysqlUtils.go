@@ -12,3 +12,14 @@ func CreateTableWithArticle() {
 	);`
 	ModifyDB(sql)
 }
+
+func CreateTableWithAlbum() {
+	sql := `create table if not exists album(
+		id int(4) primary key auto_increment not null,
+		filepath varchar(255),
+		filename varchar(64),
+		status int(4),
+		createtime int(10)
+	);`
+	ModifyDB(sql)
+}
